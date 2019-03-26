@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import
+from __future__ import absolute_import, with_statement
 
 import logging
 import os
@@ -97,6 +97,15 @@ class WheelCommand(RequirementCommand):
         cmd_opts.add_option(cmdoptions.no_clean())
         cmd_opts.add_option(cmdoptions.require_hashes())
 
+        cmd_opts.add_option(
+            '--save-wheel-names',
+            dest='path_to_wheelnames',
+            action='store',
+            metavar='path',
+            help="stores the filenames of wheels in file of given path"
+        )
+
+
         index_opts = cmdoptions.make_option_group(
             cmdoptions.index_group,
             self.parser,
@@ -169,6 +178,7 @@ class WheelCommand(RequirementCommand):
                         build_options=options.build_options or [],
                         global_options=options.global_options or [],
                         no_clean=options.no_clean,
+                        path_to_save_wheelnames = options.path_to_wheelnames
                     )
                     build_failures = wb.build(
                         requirement_set.requirements.values(), session=session,
@@ -177,6 +187,16 @@ class WheelCommand(RequirementCommand):
                         raise CommandError(
                             "Failed to build one or more wheels"
                         )
+                    if len(wb.wheel_filenames) !=0:
+                        try:
+                            with open(options.path_to_wheelnames, 'w') as file:
+                                output = ''
+                                for wheel_filename in wb.wheel_filenames:
+                                    output = wheel_filename + os.linesep
+                                file.write(output)
+                        except EnvironmentError as e:
+                            logger.error(str(e))
+
                 except PreviousBuildDirError:
                     options.no_clean = True
                     raise
