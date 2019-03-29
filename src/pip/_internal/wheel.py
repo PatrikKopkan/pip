@@ -851,8 +851,8 @@ class WheelBuilder(object):
         wheel_cache,  # type: WheelCache
         build_options=None,  # type: Optional[List[str]]
         global_options=None,  # type: Optional[List[str]]
-        no_clean=False, # type: bool
-        path_to_save_wheelnames=None # type: str
+        no_clean=False,  # type: bool
+        path_to_wheelnames=None  # Optional[str]
     ):
         # type: (...) -> None
         self.finder = finder
@@ -864,7 +864,7 @@ class WheelBuilder(object):
         self.build_options = build_options or []
         self.global_options = global_options or []
         self.no_clean = no_clean
-        self.path_to_save_wheelnames = path_to_save_wheelnames
+        self.path_to_wheelnames = path_to_wheelnames
         self.wheel_filenames = []
 
     def _build_one(self, req, output_dir, python_tag=None):
