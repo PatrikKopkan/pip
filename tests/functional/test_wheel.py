@@ -255,7 +255,7 @@ def test_pip_option_save_wheel_name(script, data):
     script.pip(
         'wheel', '--no-index', '-f', data.find_links,
         'require_simple==1.0',
-        '--save-wheel-name', './wheelnames',
+        '--save-wheel-name', 'wheelnames',
     )
 
     wheel_file_names = ['require_simple-1.0-py%s-none-any.whl' % pyversion[0],

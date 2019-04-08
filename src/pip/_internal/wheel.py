@@ -865,7 +865,7 @@ class WheelBuilder(object):
         self.global_options = global_options or []
         self.no_clean = no_clean
         self.path_to_wheelnames = path_to_wheelnames
-        self.wheel_filenames = []
+        self.wheel_filenames = []  # type: List[str]
 
     def _build_one(self, req, output_dir, python_tag=None):
         """Build one wheel.
@@ -1060,7 +1060,7 @@ class WheelBuilder(object):
                     build_success.append(req)
 
                     self.wheel_filenames.append(
-                        os.path.relpath(wheel_file, output_dir)
+                        str(os.path.relpath(wheel_file, output_dir))
                     )
                     if autobuilding:
                         # XXX: This is mildly duplicative with prepare_files,
