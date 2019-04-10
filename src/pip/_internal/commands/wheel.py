@@ -188,10 +188,15 @@ class WheelCommand(RequirementCommand):
                         )
                     if wb.path_to_wheelnames is not None:
                         if len(wb.wheel_filenames) != 0:
+                            entries_to_save = wb.wheel_filenames[::]
+                            for req in requirement_set.requirements.values():
+                                if req.link.filename.endswith('whl'):
+                                    entries_to_save.append(req.link.filename)
+
                             with open(wb.path_to_wheelnames, 'w') as file:
                                 file.write(
                                     os.linesep.join(
-                                        wb.wheel_filenames
+                                        entries_to_save
                                     ) + os.linesep
                                 )
 
