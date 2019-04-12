@@ -249,8 +249,7 @@ def test_legacy_wheels_are_not_confused_with_other_files(script, tmpdir, data):
 
 
 def test_pip_option_save_wheel_name(script, data):
-    """
-    Test 'pip wheel ' success.
+    """Check if the option saves the filenames of built wheels
     """
     script.pip(
         'wheel', '--no-index', '-f', data.find_links,
@@ -262,6 +261,6 @@ def test_pip_option_save_wheel_name(script, data):
                         'simple-3.0-py%s-none-any.whl' % pyversion[0],
                         ]
     wheelnames_path = script.scratch_path / 'wheelnames'
-    wheelnames_file = open(wheelnames_path, 'r')
-    wheelnames_entries = (wheelnames_file.read()).splitlines()
+    with open(wheelnames_path, 'r') as wheelnames_file:
+        wheelnames_entries = (wheelnames_file.read()).splitlines()
     assert wheel_file_names == wheelnames_entries

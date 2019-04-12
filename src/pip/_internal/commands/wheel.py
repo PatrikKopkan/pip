@@ -102,7 +102,7 @@ class WheelCommand(RequirementCommand):
             dest='path_to_wheelnames',
             action='store',
             metavar='path',
-            help="stores the filenames of wheels in file of given path"
+            help="stores the filenames of the built or downloaded wheels in a new file of given path"
         )
 
         index_opts = cmdoptions.make_option_group(
@@ -191,13 +191,16 @@ class WheelCommand(RequirementCommand):
                         for req in requirement_set.requirements.values():
                             if req.link.filename.endswith('whl'):
                                 entries_to_save.append(req.link.filename)
-
-                        with open(wb.path_to_wheelnames, 'w') as file:
-                            file.write(
-                                '\n'.join(
-                                    entries_to_save
-                                ) + '\n'
-                            )
+                        try:
+                            with open(wb.path_to_wheelnames, 'w') as file:
+                                file.write(
+                                    '\n'.join(
+                                        entries_to_save
+                                    ) + '\n'
+                                )
+                        except PermissionError as e:
+                            logger.error('Cannot write to the given path: %s', wb.path_to_wheelnames)
+                            logger.error('PermissionError: %s', str(e))
 
                 except PreviousBuildDirError:
                     options.no_clean = True
