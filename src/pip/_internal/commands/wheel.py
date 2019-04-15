@@ -102,7 +102,8 @@ class WheelCommand(RequirementCommand):
             dest='path_to_wheelnames',
             action='store',
             metavar='path',
-            help="stores the filenames of the built or downloaded wheels in a new file of given path"
+            help=("stores the filenames of the built or downloaded wheels"
+                  "in a new file of given path"),
         )
 
         index_opts = cmdoptions.make_option_group(
@@ -198,8 +199,9 @@ class WheelCommand(RequirementCommand):
                                         entries_to_save
                                     ) + '\n'
                                 )
-                        except PermissionError as e:
-                            logger.error('Cannot write to the given path: %s', wb.path_to_wheelnames)
+                        except EnvironmentError as e:
+                            logger.error('Cannot write to the given path: %s',
+                                         wb.path_to_wheelnames)
                             logger.error('PermissionError: %s', str(e))
 
                 except PreviousBuildDirError:
