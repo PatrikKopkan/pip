@@ -102,7 +102,7 @@ class WheelCommand(RequirementCommand):
             dest='path_to_wheelnames',
             action='store',
             metavar='path',
-            help=("stores the filenames of the built or downloaded wheels"
+            help=("stores the filenames of the built or downloaded wheels "
                   "in a new file of given path"),
         )
 
