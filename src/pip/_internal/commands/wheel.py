@@ -114,6 +114,22 @@ class WheelCommand(RequirementCommand):
         self.parser.insert_option_group(0, index_opts)
         self.parser.insert_option_group(0, cmd_opts)
 
+    def save_wheelnames(self, requirement_set, wb):
+        entries_to_save = wb.wheel_filenames[::]
+        for req in requirement_set.requirements.values():
+            if req.link.filename.endswith('whl'):
+                entries_to_save.append(req.link.filename)
+        try:
+            with open(wb.path_to_wheelnames, 'w') as file:
+                file.write(
+                    os.linesep.join(
+                        entries_to_save
+                    ) + os.linesep
+                )
+        except EnvironmentError as e:
+            logger.error('Cannot write to the given path: %s%s PermissionError: %s' %
+                         (wb.path_to_wheelnames, os.linesep, str(e)))
+
     def run(self, options, args):
         cmdoptions.check_install_build_global(options)
 
@@ -188,21 +204,7 @@ class WheelCommand(RequirementCommand):
                             "Failed to build one or more wheels"
                         )
                     if wb.path_to_wheelnames is not None:
-                        entries_to_save = wb.wheel_filenames[::]
-                        for req in requirement_set.requirements.values():
-                            if req.link.filename.endswith('whl'):
-                                entries_to_save.append(req.link.filename)
-                        try:
-                            with open(wb.path_to_wheelnames, 'w') as file:
-                                file.write(
-                                    '\n'.join(
-                                        entries_to_save
-                                    ) + '\n'
-                                )
-                        except EnvironmentError as e:
-                            logger.error('Cannot write to the given path: %s',
-                                         wb.path_to_wheelnames)
-                            logger.error('PermissionError: %s', str(e))
+                        self.save_wheelnames(requirement_set, wb)
 
                 except PreviousBuildDirError:
                     options.no_clean = True

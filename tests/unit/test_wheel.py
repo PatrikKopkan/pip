@@ -5,7 +5,7 @@ import os
 import textwrap
 
 import pytest
-from mock import Mock, patch
+from mock import Mock, patch, mock_open
 from pip._vendor.packaging.requirements import Requirement
 
 from pip._internal import pep425tags, wheel
@@ -17,6 +17,7 @@ from pip._internal.utils.compat import WINDOWS
 from pip._internal.utils.misc import unpack_file
 from tests.lib import DATA_DIR, assert_paths_equal
 
+from pip._internal.commands.wheel import WheelCommand
 
 @pytest.mark.parametrize(
     "s, expected",
@@ -806,3 +807,36 @@ class TestMessageAboutScriptsNotOnPATH(object):
             retval_empty = wheel.message_about_scripts_not_on_PATH(scripts)
 
         assert retval_missing == retval_empty
+
+class TestWheelCommand(object):
+    @patch('pip._internal.wheel.WheelBuilder')
+    @patch('pip._internal.commands.wheel.RequirementSet')
+    def test_save_wheelnames(self, mocked_rs, mocked_wb):
+
+        # simulating needed behaviour
+        class Link:
+            def __init__(self, filename):
+                self.filename = filename
+
+        mocked_wb = mocked_wb()
+        mocked_wb.wheel_filenames = ['Flask-1.1.dev0-py2.py3-none-any.whl']
+
+        filenames = [
+            'flask',
+            'Werkzeug-0.15.4-py2.py3-none-any.whl',
+            'Jinja2-2.10.1-py2.py3-none-any.whl',
+            'itsdangerous-1.1.0-py2.py3-none-any.whl',
+            'Click-7.0-py2.py3-none-any.whl'
+        ]
+        List = []
+        expected = mocked_wb.wheel_filenames + filenames[1:]
+        for filename in filenames:
+            install_reg = InstallRequirement(None, None)
+            install_reg.link = Link(filename)
+            List.append(install_reg)
+        mocked_rs.requirements.values = lambda: List
+        m = (mock_open())()
+        with patch('pip._internal.commands.wheel.open', m, create=True):
+            WheelCommand().save_wheelnames(mocked_rs, mocked_wb)
+            handle = m()
+        handle.__enter__().write.assert_called_once_with(os.linesep.join(expected) + os.linesep)
