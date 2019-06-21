@@ -264,3 +264,27 @@ def test_pip_option_save_wheel_name(script, data):
     with open(wheelnames_path, 'r') as wheelnames_file:
         wheelnames_entries = (wheelnames_file.read()).splitlines()
     assert wheel_file_names == wheelnames_entries
+
+    script.pip()
+
+
+def test_pip_option_save_wheel_name_no_entry(script, data):
+    """Check if saved files is any entry when there are no built wheels"""
+
+    script.pip(
+        'install', '--no-index', '-f', data.find_links,
+        'require_simple==1.0',
+    )
+
+    script.pip(
+        'wheel', '--no-index', '-f', data.find_links,
+        'require_simple==1.0',
+        '--save-wheel-name', 'wheelnames',
+    )
+
+    wheelnames_path = script.scratch_path / 'wheelnames'
+    with open(wheelnames_path, 'r') as wheelnames_file:
+        wheelnames_entries = (wheelnames_file.read()).splitlines()
+    assert '' == wheelnames_entries
+
+    script.pip('uninstall', 'require_simple')

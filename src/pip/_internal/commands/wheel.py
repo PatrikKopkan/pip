@@ -103,7 +103,8 @@ class WheelCommand(RequirementCommand):
             action='store',
             metavar='path',
             help=("Store the filenames of the built or downloaded wheels "
-                  "in a new file of given path. Filenames are seperated by new line and file ends with new line"),
+                  "in a new file of given path. Filenames are seperated "
+                  "by new line and file ends with new line"),
         )
 
         index_opts = cmdoptions.make_option_group(
@@ -114,21 +115,26 @@ class WheelCommand(RequirementCommand):
         self.parser.insert_option_group(0, index_opts)
         self.parser.insert_option_group(0, cmd_opts)
 
-    def save_wheelnames(self, requirement_set, wb):
-        entries_to_save = wb.wheel_filenames[::]
-        for req in requirement_set.requirements.values():
-            if req.link.filename.endswith('whl'):
-                entries_to_save.append(req.link.filename)
+    def save_wheelnames(self,
+                        links_filenames,
+                        path_to_wheelnames,
+                        wheel_filenames,
+                        ):
+
+        if path_to_wheelnames is None:
+            return
+
+        entries_to_save = wheel_filenames + links_filenames
+        entries_to_save = [
+            filename + '\n' for filename in entries_to_save
+            if filename.endswith('whl')
+        ]
         try:
-            with open(wb.path_to_wheelnames, 'w') as file:
-                file.write(
-                    os.linesep.join(
-                        entries_to_save
-                    ) + os.linesep
-                )
+            with open(path_to_wheelnames, 'w') as f:
+                f.writelines(entries_to_save)
         except EnvironmentError as e:
-            logger.error('Cannot write to the given path: %s%s PermissionError: %s' %
-                         (wb.path_to_wheelnames, os.linesep, str(e)))
+            logger.error('Cannot write to the given path: %s\n%s' %
+                         (path_to_wheelnames, e))
 
     def run(self, options, args):
         cmdoptions.check_install_build_global(options)
@@ -203,8 +209,12 @@ class WheelCommand(RequirementCommand):
                         raise CommandError(
                             "Failed to build one or more wheels"
                         )
-                    if wb.path_to_wheelnames is not None:
-                        self.save_wheelnames(requirement_set, wb)
+                    self.save_wheelnames(
+                        [req.link.filename for req in
+                         requirement_set.requirements.values()],
+                        wb.path_to_wheelnames,
+                        wb.wheel_filenames,
+                    )
 
                 except PreviousBuildDirError:
                     options.no_clean = True

@@ -43,7 +43,8 @@ from pip._internal.utils.ui import open_spinner
 
 if MYPY_CHECK_RUNNING:
     from typing import (
-        Dict, List, Optional, Sequence, Mapping, Tuple, IO, Text, Any, Iterable
+        Dict, List, Optional, Sequence, Mapping, Tuple,
+        IO, Text, Any, Iterable, Union
     )
     from pip._vendor.packaging.requirements import Requirement
     from pip._internal.req.req_install import InstallRequirement
@@ -853,7 +854,7 @@ class WheelBuilder(object):
         global_options=None,  # type: Optional[List[str]]
         no_clean=False,  # type: bool
         # path where to save built names of built wheels
-        path_to_wheelnames=None,  # type: Optional[str]
+        path_to_wheelnames=None,  # type: Optional[Union[bytes, Text]]
     ):
         # type: (...) -> None
         self.finder = finder

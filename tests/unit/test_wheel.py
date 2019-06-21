@@ -5,7 +5,7 @@ import os
 import textwrap
 
 import pytest
-from mock import Mock, patch, mock_open
+from mock import Mock, patch
 from pip._vendor.packaging.requirements import Requirement
 
 from pip._internal import pep425tags, wheel
@@ -18,6 +18,7 @@ from pip._internal.utils.misc import unpack_file
 from tests.lib import DATA_DIR, assert_paths_equal
 
 from pip._internal.commands.wheel import WheelCommand
+
 
 @pytest.mark.parametrize(
     "s, expected",
@@ -808,35 +809,46 @@ class TestMessageAboutScriptsNotOnPATH(object):
 
         assert retval_missing == retval_empty
 
+
 class TestWheelCommand(object):
-    @patch('pip._internal.wheel.WheelBuilder')
-    @patch('pip._internal.commands.wheel.RequirementSet')
-    def test_save_wheelnames(self, mocked_rs, mocked_wb):
 
-        # simulating needed behaviour
-        class Link:
-            def __init__(self, filename):
-                self.filename = filename
-
-        mocked_wb = mocked_wb()
-        mocked_wb.wheel_filenames = ['Flask-1.1.dev0-py2.py3-none-any.whl']
-
-        filenames = [
+    def test_save_wheelnames(self, tmpdir):
+        wheel_filenames = ['Flask-1.1.dev0-py2.py3-none-any.whl']
+        links_filenames = [
             'flask',
             'Werkzeug-0.15.4-py2.py3-none-any.whl',
             'Jinja2-2.10.1-py2.py3-none-any.whl',
             'itsdangerous-1.1.0-py2.py3-none-any.whl',
             'Click-7.0-py2.py3-none-any.whl'
         ]
-        List = []
-        expected = mocked_wb.wheel_filenames + filenames[1:]
-        for filename in filenames:
-            install_reg = InstallRequirement(None, None)
-            install_reg.link = Link(filename)
-            List.append(install_reg)
-        mocked_rs.requirements.values = lambda: List
-        m = (mock_open())()
-        with patch('pip._internal.commands.wheel.open', m, create=True):
-            WheelCommand().save_wheelnames(mocked_rs, mocked_wb)
-            handle = m()
-        handle.__enter__().write.assert_called_once_with(os.linesep.join(expected) + os.linesep)
+
+        expected = wheel_filenames + links_filenames[1:]
+        expected = [filename + '\n' for filename in expected]
+        temp_file = tmpdir.join('wheelfiles')
+
+        WheelCommand().save_wheelnames(
+            links_filenames,
+            temp_file,
+            wheel_filenames
+        )
+
+        with open(temp_file, 'r') as f:
+            test_content = f.readlines()
+        assert test_content == expected
+
+        import stat
+
+        os.chmod(temp_file, stat.S_IREAD)
+        with patch('pip._internal.commands.wheel.logger') as mock_logging:
+
+            WheelCommand().save_wheelnames(
+                links_filenames,
+                temp_file,
+                wheel_filenames
+            )
+            call = mock_logging.error.call_args[0][0]
+            assert call == "Cannot write to the given path: %s\n" \
+                           "[Errno 13] Permission " \
+                           "denied: Path('%s')" % (temp_file, temp_file)
+
+        os.chmod(temp_file, stat.S_IREAD | stat.S_IWRITE)
