@@ -102,8 +102,8 @@ class WheelCommand(RequirementCommand):
             dest='path_to_wheelnames',
             action='store',
             metavar='path',
-            help=("stores the filenames of the built or downloaded wheels "
-                  "in a new file of given path"),
+            help=("Store the filenames of the built or downloaded wheels "
+                  "in a new file of given path. Filenames are seperated by new line and file ends with new line"),
         )
 
         index_opts = cmdoptions.make_option_group(

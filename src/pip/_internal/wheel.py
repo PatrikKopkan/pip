@@ -852,7 +852,8 @@ class WheelBuilder(object):
         build_options=None,  # type: Optional[List[str]]
         global_options=None,  # type: Optional[List[str]]
         no_clean=False,  # type: bool
-        path_to_wheelnames=None  # type: Optional[str]
+        # path where to save built names of built wheels
+        path_to_wheelnames=None,  # type: Optional[str]
     ):
         # type: (...) -> None
         self.finder = finder
