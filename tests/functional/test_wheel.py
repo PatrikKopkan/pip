@@ -8,7 +8,6 @@ from pip._internal.cli.status_codes import ERROR, PREVIOUS_BUILD_DIR_ERROR
 from pip._internal.locations import write_delete_marker_file
 from tests.lib import pyversion
 
-
 @pytest.fixture(autouse=True)
 def auto_with_wheel(with_wheel):
     pass
@@ -237,6 +236,7 @@ def test_pep517_wheels_are_not_confused_with_other_files(script, tmpdir, data):
 def test_legacy_wheels_are_not_confused_with_other_files(script, tmpdir, data):
     """Check correct wheels are copied. (#6196)
     """
+
     pkg_to_wheel = data.src / 'simplewheel-1.0'
     add_files_to_dist_directory(pkg_to_wheel)
 
@@ -257,34 +257,42 @@ def test_pip_option_save_wheel_name(script, data):
         '--save-wheel-name', 'wheelnames',
     )
 
-    wheel_file_names = ['require_simple-1.0-py%s-none-any.whl' % pyversion[0],
-                        'simple-3.0-py%s-none-any.whl' % pyversion[0],
-                        ]
+    wheel_file_names = [
+        'require_simple-1.0-py%s-none-any.whl' % pyversion[0],
+        'simple-3.0-py%s-none-any.whl' % pyversion[0],
+    ]
     wheelnames_path = script.scratch_path / 'wheelnames'
     with open(wheelnames_path, 'r') as wheelnames_file:
         wheelnames_entries = (wheelnames_file.read()).splitlines()
     assert wheel_file_names == wheelnames_entries
 
-    script.pip()
 
+def test_pip_option_save_wheel_name_error(script, data):
+    import stat
+    temp_file = script.base_path / 'scratch' /'wheelnames'
 
-def test_pip_option_save_wheel_name_no_entry(script, data):
-    """Check if saved files is any entry when there are no built wheels"""
-
-    script.pip(
-        'install', '--no-index', '-f', data.find_links,
-        'require_simple==1.0',
-    )
+    wheel_file_names = [
+        'require_simple-1.0-py%s-none-any.whl' % pyversion[0],
+        'simple-3.0-py%s-none-any.whl' % pyversion[0],
+    ]
 
     script.pip(
         'wheel', '--no-index', '-f', data.find_links,
         'require_simple==1.0',
         '--save-wheel-name', 'wheelnames',
     )
+    os.chmod(temp_file, stat.S_IREAD)
+    result = script.pip(
+        'wheel', '--no-index', '-f', data.find_links,
+        'require_simple==1.0',
+        '--save-wheel-name', 'wheelnames', expect_error=True,
+    )
+    os.chmod(temp_file, stat.S_IREAD | stat.S_IWRITE)
 
-    wheelnames_path = script.scratch_path / 'wheelnames'
-    with open(wheelnames_path, 'r') as wheelnames_file:
-        wheelnames_entries = (wheelnames_file.read()).splitlines()
-    assert '' == wheelnames_entries
+    assert "ERROR: Cannot write to the given path: wheelnames\n" \
+           "[Errno 13] Permission denied: 'wheelnames'\n" == result.stderr
 
-    script.pip('uninstall', 'require_simple')
+    with open(temp_file) as f:
+        result = f.read().splitlines()
+    # check that file stays same
+    assert result == wheel_file_names
