@@ -205,17 +205,16 @@ class WheelCommand(RequirementCommand):
                     build_failures = wb.build(
                         requirement_set.requirements.values(), session=session,
                     )
+                    self.save_wheelnames(
+                        [req.link.filename for req in
+                         requirement_set.successfully_downloaded],
+                        wb.path_to_wheelnames,
+                        wb.wheel_filenames,
+                    )
                     if len(build_failures) != 0:
                         raise CommandError(
                             "Failed to build one or more wheels"
                         )
-                    self.save_wheelnames(
-                        [req.link.filename for req in
-                         requirement_set.requirements.values()],
-                        wb.path_to_wheelnames,
-                        wb.wheel_filenames,
-                    )
-
                 except PreviousBuildDirError:
                     options.no_clean = True
                     raise

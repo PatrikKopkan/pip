@@ -3,10 +3,12 @@ import os
 from os.path import exists
 
 import pytest
+import stat
 
 from pip._internal.cli.status_codes import ERROR, PREVIOUS_BUILD_DIR_ERROR
 from pip._internal.locations import write_delete_marker_file
 from tests.lib import pyversion
+
 
 @pytest.fixture(autouse=True)
 def auto_with_wheel(with_wheel):
@@ -267,9 +269,9 @@ def test_pip_option_save_wheel_name(script, data):
     assert wheel_file_names == wheelnames_entries
 
 
-def test_pip_option_save_wheel_name_error(script, data):
-    import stat
-    temp_file = script.base_path / 'scratch' /'wheelnames'
+def test_pip_option_save_wheel_name_Permission_error(script, data):
+
+    temp_file = script.base_path / 'scratch' / 'wheelnames'
 
     wheel_file_names = [
         'require_simple-1.0-py%s-none-any.whl' % pyversion[0],
@@ -296,3 +298,15 @@ def test_pip_option_save_wheel_name_error(script, data):
         result = f.read().splitlines()
     # check that file stays same
     assert result == wheel_file_names
+
+
+def test_pip_option_save_wheel_name_error_during_build(script, data):
+    script.pip(
+        'wheel', '--no-index', '--save-wheel-name', 'wheelnames',
+        '-f', data.find_links, 'wheelbroken==0.1',
+        expect_error=True,
+    )
+    wheelnames_path = script.base_path / 'scratch' / 'wheelnames'
+    with open(wheelnames_path) as f:
+        wheelnames = f.read().splitlines()
+    assert wheelnames == []
